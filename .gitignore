@@ -1,0 +1,33 @@
+*~
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.toc
+*.idx
+*.ilg
+*.ind
+*.loa
+*.lof
+*.lot
+auto/
+# LaTeX intermediate files
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.lol
+*.synctex.gz
+*.xdv
+
+# Generated PDF (optional)
+*.pdf

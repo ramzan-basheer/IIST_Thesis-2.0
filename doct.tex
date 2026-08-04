@@ -1,0 +1,62 @@
+\documentclass[phd,thesis,twoside]{iist}
+
+
+\title{Title of the Document}
+\author{Author Name}
+\studentid{Student ID}
+\advisor{Advisor Name}
+\specialization{Specialization}
+\department{Department Name}
+\date{Month Year}
+
+
+%% ---- Document starts here ---- %%
+\begin{document}
+
+%% ---- Make the initial set of pages ---- %%
+\maketitle % Title page
+\makecertificate % Certificate 
+\makedeclaration % Declaration
+\makededication % Dedication
+\makeacknowledgements % Acknowledgements
+\makeabstract % Abstract
+\maketableofcontents % Table of contents
+\makelistoffigures % List of figures
+\makelistoftables % List of tables
+\makelistofalgorithms % List of algorithms
+\makeabbreviations % List of abbreviations
+\makenomenclature % Nomenclature (for symbols used)
+
+% Initialize chapter settings; DO NOT comment this line
+\makechaptersettings 
+
+
+%% ---- Start chapters here ---- %%
+\input{chapter1}
+\input{chapter2}
+\input{chapter3}
+
+
+%% ---- Bibliography addition ----%%
+\makebibsettings
+\bibliographystyle{IEEEtran}
+\bibliography{doct}
+
+%% ---- List of Publications ----%%
+\makepublications
+
+%% ---- Appendices starts here ---- %%
+\makeappendixsettings
+\input{appendixA}
+\input{appendixB}
+
+%% ---- Index starts here ---- %%
+\makeindexsettings
+
+
+\end{document}
+
+
+
+
+

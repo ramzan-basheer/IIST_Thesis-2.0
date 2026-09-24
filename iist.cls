@@ -86,6 +86,7 @@
 \newif\ifIIST@review      \IIST@reviewfalse
 \newif\ifIIST@index       \IIST@indexfalse
 \newif\ifIIST@chapteronly \IIST@chapteronlyfalse
+\newif\ifIIST@ieee        \IIST@ieeefalse     % default: bibliography-agnostic (no biblatex)
 
 
 %% ---- Options: Degree / Document Type (UNCHANGED from v1) ---- %%
@@ -154,6 +155,12 @@
 % review, without editing any chapter file.
 \DeclareOption{chapteronly}{\IIST@chapteronlytrue}
 
+% ieee -- opt-in IEEE-style bibliography via biblatex (style=ieee,
+% backend=biber, sorting=none). Without this option the class loads no
+% bibliography package, as before. See "Optional IEEE bibliography"
+% below for the document-level calls this option requires.
+\DeclareOption{ieee}{\IIST@ieeetrue}
+
 % Any other option is forwarded to the base class, exactly as in v1
 % (previously forwarded to `report'; now forwarded to `book').
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
@@ -186,16 +193,46 @@
 % left/right margins applied to every page -- the corrected mirroring
 % now happens automatically once `twoside' is requested, with no change
 % needed to the geometry call itself.
+%
+% Paper size: NOT pinned here yet, because the page size of the
+% existing thesis build has not been confirmed. The class itself sets no
+% paper option, so the size comes from `book' (letterpaper) unless
+% doct.tex passes a4paper/letterpaper in \documentclass[...]{iist}.
+% To pin it, run on the existing build:
+%     pdfinfo <existing_build>.pdf | grep "Page size"
+%   "595.276 x 841.89 pts (A4)"   -> add a4paper     to the options below
+%   "612 x 792 pts (letter)"      -> add letterpaper to the options below
+% Do not change the four margin values when doing so.
 \usepackage[inner=1.5in, outer=1in, top=1in, bottom=1.25in]{geometry}
 \usepackage[english]{babel}
 \usepackage{setspace}
 \usepackage{graphicx}
 \usepackage{longtable}
 \usepackage[T1]{fontenc}
+% Libertinus for text and math (replaces Computer Modern). Loaded after
+% fontenc and before amsmath. Under pdfLaTeX, `libertinus' sets the text
+% font only (it loads libertinus-type1); `libertinust1math' supplies the
+% matching math font and loads amsmath itself, so the later
+% \usepackage{amsmath} below is a no-op.
+\usepackage{libertinus}
+\usepackage{libertinust1math}
+% Font embedding, PDF metadata, and accessibility -- limitations.
+%   - Fonts: Libertinus is supplied as Type 1 fonts and is embedded in
+%     the PDF by the engine; confirm with `pdffonts <file>.pdf' (emb=yes).
+%   - Metadata: pdftitle/pdfauthor/pdfsubject/pdfkeywords are populated
+%     via hyperref (see "Automatic PDF metadata" below).
+%   - PDF/A conformance and tagged-PDF accessibility are NOT guaranteed
+%     by this class. Both require toolchain configuration outside this
+%     class (e.g. PDF/A output profile, colour profile, XMP metadata,
+%     structure tagging).
+%   - Do not claim PDF/A or accessibility compliance for a thesis built
+%     with this class without separate validation (e.g. veraPDF for
+%     PDF/A, PAC 3 for PDF/UA accessibility).
 \usepackage{ifthen}
 \usepackage[ruled, algochapter, linesnumbered]{algorithm2e} % UNCHANGED (Phase-2 constraint: do not redesign)
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{makecell}
 \usepackage{calc}          % NEW: provides \totalheightof, used by the adaptive title page (Phase 2.7)
 % [final] is required here, not cosmetic: hyperref auto-detects the
 % document-class-level `draft' option (which IISTThesis's own `draft'
@@ -210,21 +247,28 @@
 % no-op for a non-draft build.
 \usepackage[final]{hyperref}      % configured below, after colour definitions
 \usepackage{emptypage}
-\usepackage[labelfont=bf]{caption}
+% font=small: captions (figure and table alike) are set one LaTeX size
+% step below body text (10.95pt on this 12pt-base document), matching
+% conventional dissertation typographic hierarchy. Without this key,
+% caption text defaults to \normalsize -- identical in point size to
+% body text -- and is distinguished only by the bold label; that bold
+% weight increases perceived visual density enough to read as "larger"
+% even though it is not, which is exactly the reported symptom.
+% Confirmed by direct \f@size measurement: body text and captions were
+% both exactly 12pt before this change. font=small applies uniformly
+% to figure and table captions alike, since both use the same `caption'
+% package mechanism; List of Figures/Tables entries are unaffected, as
+% they are typeset through a separate mechanism untouched by this key.
+\usepackage[labelfont=bf, font=small]{caption}
 \usepackage{subcaption}    % NEW (Phase 1.4): must follow `caption'
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
-% NEW (Phase 1.4). `expansion=false' is deliberate: pdfTeX's font-expansion
-% feature requires fully scalable (Type1/OpenType) fonts, and the default
-% Computer Modern set used by v1 includes some sizes that are not
-% guaranteed scalable in every installation, which makes expansion raise
-% a fatal error in that case. Protrusion, kerning, spacing, and tracking
-% all still apply and do not have this requirement, so this keeps v1's
-% exact font family/appearance unchanged (per this phase's own
-% "without altering document appearance unnecessarily" brief) while
-% still gaining microtype's benefit, and avoids adding a new font
-% package purely to satisfy the expansion feature.
+% NEW (Phase 1.4). The class sets text in Libertinus and math in
+% Libertinus T1 Math (scalable Type 1 fonts; see the font block above),
+% and microtype runs with `expansion=false', so protrusion, kerning,
+% spacing, and tracking apply while font expansion stays off.
+% Expansion has not been re-enabled or re-tested with Libertinus.
 \usepackage[expansion=false]{microtype}
 \usepackage{booktabs}      % NEW (Phase 1.4): professional table rules
 \usepackage{pdflscape}     % NEW (Phase 1.7): rotates the PDF page itself for on-screen reading,
@@ -359,6 +403,24 @@
 \Crefname{problem}{Problem}{Problems}
 \crefname{claim}{claim}{claims}
 \Crefname{claim}{Claim}{Claims}
+
+
+%% ---- Optional IEEE bibliography (`ieee' option) ---- %%
+% Loaded only when \documentclass[ieee]{iist} is given; otherwise no
+% bibliography package is loaded and the class stays
+% bibliography-agnostic. natbib is never loaded under either branch.
+% Requires biber (not bibtex). Required document-level calls:
+%     % preamble of doct.tex
+%     \addbibresource{references.bib}
+%     % where the bibliography should appear, e.g.
+%     \makebibsettings
+%     \printbibliography
+% Compile: pdflatex doct -> biber doct -> pdflatex doct -> pdflatex doct
+\ifIIST@ieee
+  % csquotes is required by biblatex; loaded only with the ieee option.
+  \RequirePackage{csquotes}
+  \RequirePackage[backend=biber,style=ieee,sorting=none]{biblatex}
+\fi
 
 
 %% ---- Custom Commands ---- %%
